@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Hacker Terminal Pro</title>
+    <style>
+        body {
+            background-color: black;
+            color: limegreen;
+            font-family: monospace;
+            padding: 20px;
+            overflow: hidden;
+            margin: 0;
+        }
+        .terminal {
+            width: 100%;
+            height: 80vh;
+            background-color: #111;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid limegreen;
+            box-shadow: 0 0 10px limegreen;
+        }
+        .input-line {
+            display: flex;
+            align-items: center;
+        }
+        input {
+            background: none;
+            border: none;
+            color: limegreen;
+            font-family: monospace;
+            flex-grow: 1;
+            margin-left: 5px;
+        }
+        input:focus {
+            outline: none;
+        }
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 2px 2px red; }
+            50% { text-shadow: -2px -2px cyan; }
+            100% { text-shadow: 2px -2px magenta; }
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #333;
+            margin-top: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: limegreen;
+            width: 0;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="glitch">Elite Hacker Terminal Pro</h1>
+    <div class="terminal" id="terminal">
+        <p>> Welcome to the Elite Hacker Terminal Pro. Type 'help' for commands.</p>
+    </div>
+    <div class="input-line">
+        <span>> </span>
+        <input type="text" id="commandInput" autofocus>
+    </div>
+
+    <script>
+        const terminal = document.getElementById("terminal");
+        const input = document.getElementById("commandInput");
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        input.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                const command = input.value.trim();
+                if (command) {
+                    commandHistory.push(command);
+                    historyIndex = commandHistory.length;
+                    input.value = "";
+                    terminal.innerHTML += `<p>> ${command}</p>`;
+                    processCommand(command);
+                }
+            }
+        });
+
+        input.addEventListener("keydown", function(event) {
+            if (event.key === "ArrowUp" && historyIndex > 0) {
+                historyIndex--;
+                input.value = commandHistory[historyIndex];
+            } else if (event.key === "ArrowDown" && historyIndex < commandHistory.length - 1) {
+                historyIndex++;
+                input.value = commandHistory[historyIndex];
+            } else if (event.key === "ArrowDown" && historyIndex === commandHistory.length - 1) {
+                historyIndex++;
+                input.value = "";
+            }
+        });
+
+        function printWithDelay(text, delay) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    terminal.innerHTML += `<p>${text}</p>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    resolve();
+                }, delay);
+            });
+        }
+
+        async function processCommand(command) {
+            const parts = command.split(" ");
+            const cmd = parts[0];
+            const args = parts.slice(1);
+
+            switch (cmd) {
+                case "help":
+                    await printWithDelay("Available commands:", 500);
+                    await printWithDelay("help, scan, brute, ping, trace, encrypt, decrypt, hack, whoami, history, clear, exit", 500);
+                    break;
+                case "scan":
+                    await printWithDelay("Scanning network...", 1000);
+                    await printWithDelay("[✔] Found device: 192.168.1.10 - Open ports: 22, 80, 443", 1500);
+                    await printWithDelay("[✔] Found device: 192.168.1.12 - Open ports: 21, 3389", 2000);
+                    break;
+                case "brute":
+                    await printWithDelay("Starting brute-force attack...", 1000);
+                    await printWithDelay("[✘] Attempt 1: Failed", 1200);
+                    await printWithDelay("[✘] Attempt 2: Failed", 1400);
+                    await printWithDelay("[✔] Password cracked: root@123", 1800);
+                    break;
+                case "ping":
+                    if (args.length > 0) {
+                        await printWithDelay(`Pinging ${args[0]}...`, 800);
+                        await printWithDelay(`[✔] Reply from ${args[0]}: time=32ms TTL=64`, 1200);
+                    } else {
+                        await printWithDelay("Usage: ping [IP/hostname]", 500);
+                    }
+                    break;
+                case "trace":
+                    await printWithDelay("Tracing route...", 1000);
+                    await printWithDelay("[✔] Hop 1: 192.168.1.1 - 5ms", 1500);
+                    await printWithDelay("[✔] Hop 2: 10.0.0.1 - 20ms", 2000);
+                    await printWithDelay("[✔] Hop 3: 172.217.0.14 - 35ms", 2500);
+                    break;
+                case "encrypt":
+                    if (args.length > 0) {
+                        const encrypted = caesarCipher(args.join(" "), 3);
+                        await printWithDelay(`Encrypted: ${encrypted}`, 500);
+                    } else {
+                        await printWithDelay("Usage: encrypt [text]", 500);
+                    }
+                    break;
+                case "decrypt":
+                    if (args.length > 0) {
+                        const decrypted = caesarCipher(args.join(" "), -3);
+                        await printWithDelay(`Decrypted: ${decrypted}`, 500);
+                    } else {
+                        await printWithDelay("Usage: decrypt [text]", 500);
+                    }
+                    break;
+                case "hack":
+                    if (args.length > 0) {
+                        await printWithDelay(`Initiating hack on ${args[0]}...`, 1000);
+                        await simulateHack(args[0]);
+                    } else {
+                        await printWithDelay("Usage: hack [target]", 500);
+                    }
+                    break;
+                case "whoami":
+                    await printWithDelay("User: root", 500);
+                    await printWithDelay("Access Level: Admin", 500);
+                    break;
+                case "history":
+                    await printWithDelay("Command History:", 500);
+                    commandHistory.forEach((cmd, index) => printWithDelay(`${index + 1}: ${cmd}`, 100));
+                    break;
+                case "clear":
+                    terminal.innerHTML = "";
+                    break;
+                case "exit":
+                    await printWithDelay("Logging out...", 1000);
+                    terminal.innerHTML += `<p>> Session terminated.</p>`;
+                    break;
+                default:
+                    await printWithDelay("Unknown command. Type 'help' for a list of commands.", 500);
+            }
+        }
+
+        function caesarCipher(text, shift) {
+            return text.split("").map(char => {
+                if (char.match(/[a-z]/i)) {
+                    const code = char.charCodeAt(0);
+                    const offset = code >= 65 && code <= 90 ? 65 : 97;
+                    return String.fromCharCode(((code - offset + shift) % 26) + offset);
+                }
+                return char;
+            }).join("");
+        }
+
+        async function simulateHack(target) {
+            const progressBar = document.createElement("div");
+            progressBar.className = "progress-bar";
+            const progress = document.createElement("div");
+            progress.className = "progress";
+            progressBar.appendChild(progress);
+            terminal.appendChild(progressBar);
+
+            for (let i = 0; i <= 100; i += 10) {
+                progress.style.width = `${i}%`;
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            await printWithDelay(`[✔] Successfully hacked ${target}`, 500);
+            progressBar.remove();
+        }
+    </script>
+</body>
+</html>
