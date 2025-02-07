@@ -3,222 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elite Hacker Terminal Pro</title>
+    <title>Luke Yoon CS IA practice</title>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
     <style>
+        :root {
+            --hacker-green: #00ff00;
+            --matrix-rain: #0f0;
+        }
         body {
-            background-color: black;
-            color: limegreen;
-            font-family: monospace;
-            padding: 20px;
-            overflow: hidden;
+            background-color: #000;
+            color: var(--hacker-green);
+            font-family: 'Courier New', monospace;
             margin: 0;
+            overflow: hidden;
+        }
+        .terminal-container {
+            position: relative;
+            padding: 20px;
+            height: 100vh;
+        }
+        .matrix-rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.3;
         }
         .terminal {
-            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--hacker-green);
             height: 80vh;
-            background-color: #111;
-            padding: 10px;
+            padding: 20px;
             overflow-y: auto;
-            border: 1px solid limegreen;
-            box-shadow: 0 0 10px limegreen;
+            box-shadow: 0 0 20px var(--hacker-green);
         }
         .input-line {
             display: flex;
             align-items: center;
+            margin-top: 10px;
         }
         input {
             background: none;
             border: none;
-            color: limegreen;
-            font-family: monospace;
+            color: var(--hacker-green);
+            font-family: inherit;
             flex-grow: 1;
             margin-left: 5px;
         }
-        input:focus {
-            outline: none;
+        .progress-bar {
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin: 10px 0;
         }
-        .glitch {
-            animation: glitch 0.3s infinite;
+        .progress {
+            height: 100%;
+            background: var(--hacker-green);
+            width: 0;
+            transition: width 0.3s;
+        }
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .achievement {
+            animation: pop 0.5s;
         }
         @keyframes glitch {
             0% { text-shadow: 2px 2px red; }
             50% { text-shadow: -2px -2px cyan; }
             100% { text-shadow: 2px -2px magenta; }
         }
-        .progress-bar {
-            width: 100%;
-            height: 10px;
-            background-color: #333;
-            margin-top: 10px;
-            border-radius: 5px;
-            overflow: hidden;
+        @keyframes matrix {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(100%); }
         }
-        .progress {
-            height: 100%;
-            background-color: limegreen;
-            width: 0;
-            transition: width 0.5s;
+        @keyframes pop {
+            0% { transform: scale(0); }
+            90% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
-    <h1 class="glitch">Elite Hacker Terminal Pro</h1>
-    <div class="terminal" id="terminal">
-        <p>> Welcome to the Elite Hacker Terminal Pro. Type 'help' for commands.</p>
-    </div>
-    <div class="input-line">
-        <span>> </span>
-        <input type="text" id="commandInput" autofocus>
+    <canvas class="matrix-rain" id="matrix"></canvas>
+    <div class="terminal-container">
+        <div class="hud">
+            <div>Score: <span id="score">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+            <div>RAM: <span id="ram">64MB</span></div>
+        </div>
+        <div class="terminal" id="terminal">
+            <p>> Initializing Luke Yoon advanced hacking terminal Pro v5.0...</p>
+            <p>> Neural AI Core Activated</p>
+            <p>> Type 'help' for commands</p>
+        </div>
+        <div class="input-line">
+            <span>> </span>
+            <input type="text" id="commandInput" autofocus>
+        </div>
     </div>
 
     <script>
-        const terminal = document.getElementById("terminal");
-        const input = document.getElementById("commandInput");
+        // ======================
+        // Core System
+        // ======================
+        const terminal = document.getElementById('terminal');
+        const input = document.getElementById('commandInput');
         let commandHistory = [];
-        let historyIndex = -1;
+        let score = 0;
+        let level = 1;
+        let aiModel;
 
-        input.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                const command = input.value.trim();
-                if (command) {
-                    commandHistory.push(command);
-                    historyIndex = commandHistory.length;
-                    input.value = "";
-                    terminal.innerHTML += `<p>> ${command}</p>`;
-                    processCommand(command);
-                }
-            }
-        });
+        // ======================
+        // AI Initialization
+        // ======================
+        async function initAI() {
+            aiModel = await tf.loadLayersModel('https://your-ai-model-url/model.json');
+        }
+        initAI();
 
-        input.addEventListener("keydown", function(event) {
-            if (event.key === "ArrowUp" && historyIndex > 0) {
-                historyIndex--;
-                input.value = commandHistory[historyIndex];
-            } else if (event.key === "ArrowDown" && historyIndex < commandHistory.length - 1) {
-                historyIndex++;
-                input.value = commandHistory[historyIndex];
-            } else if (event.key === "ArrowDown" && historyIndex === commandHistory.length - 1) {
-                historyIndex++;
-                input.value = "";
-            }
-        });
+        // ======================
+        // Matrix Rain Effect
+        // ======================
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*';
+        const drops = Array(Math.floor(canvas.width / 10)).fill(0);
 
-        function printWithDelay(text, delay) {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    terminal.innerHTML += `<p>${text}</p>`;
-                    terminal.scrollTop = terminal.scrollHeight;
-                    resolve();
-                }, delay);
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0';
+            drops.forEach((drop, i) => {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(char, i * 10, drop * 10);
+                drops[i] = (drop >= canvas.height/10 || Math.random() > 0.95) ? 0 : drop + 1;
             });
+            requestAnimationFrame(drawMatrix);
         }
+        drawMatrix();
 
-        async function processCommand(command) {
-            const parts = command.split(" ");
-            const cmd = parts[0];
-            const args = parts.slice(1);
-
-            switch (cmd) {
-                case "help":
-                    await printWithDelay("Available commands:", 500);
-                    await printWithDelay("help, scan, brute, ping, trace, encrypt, decrypt, hack, whoami, history, clear, exit", 500);
-                    break;
-                case "scan":
-                    await printWithDelay("Scanning network...", 1000);
-                    await printWithDelay("[✔] Found device: 192.168.1.10 - Open ports: 22, 80, 443", 1500);
-                    await printWithDelay("[✔] Found device: 192.168.1.12 - Open ports: 21, 3389", 2000);
-                    break;
-                case "brute":
-                    await printWithDelay("Starting brute-force attack...", 1000);
-                    await printWithDelay("[✘] Attempt 1: Failed", 1200);
-                    await printWithDelay("[✘] Attempt 2: Failed", 1400);
-                    await printWithDelay("[✔] Password cracked: root@123", 1800);
-                    break;
-                case "ping":
-                    if (args.length > 0) {
-                        await printWithDelay(`Pinging ${args[0]}...`, 800);
-                        await printWithDelay(`[✔] Reply from ${args[0]}: time=32ms TTL=64`, 1200);
-                    } else {
-                        await printWithDelay("Usage: ping [IP/hostname]", 500);
-                    }
-                    break;
-                case "trace":
-                    await printWithDelay("Tracing route...", 1000);
-                    await printWithDelay("[✔] Hop 1: 192.168.1.1 - 5ms", 1500);
-                    await printWithDelay("[✔] Hop 2: 10.0.0.1 - 20ms", 2000);
-                    await printWithDelay("[✔] Hop 3: 172.217.0.14 - 35ms", 2500);
-                    break;
-                case "encrypt":
-                    if (args.length > 0) {
-                        const encrypted = caesarCipher(args.join(" "), 3);
-                        await printWithDelay(`Encrypted: ${encrypted}`, 500);
-                    } else {
-                        await printWithDelay("Usage: encrypt [text]", 500);
-                    }
-                    break;
-                case "decrypt":
-                    if (args.length > 0) {
-                        const decrypted = caesarCipher(args.join(" "), -3);
-                        await printWithDelay(`Decrypted: ${decrypted}`, 500);
-                    } else {
-                        await printWithDelay("Usage: decrypt [text]", 500);
-                    }
-                    break;
-                case "hack":
-                    if (args.length > 0) {
-                        await printWithDelay(`Initiating hack on ${args[0]}...`, 1000);
-                        await simulateHack(args[0]);
-                    } else {
-                        await printWithDelay("Usage: hack [target]", 500);
-                    }
-                    break;
-                case "whoami":
-                    await printWithDelay("User: root", 500);
-                    await printWithDelay("Access Level: Admin", 500);
-                    break;
-                case "history":
-                    await printWithDelay("Command History:", 500);
-                    commandHistory.forEach((cmd, index) => printWithDelay(`${index + 1}: ${cmd}`, 100));
-                    break;
-                case "clear":
-                    terminal.innerHTML = "";
-                    break;
-                case "exit":
-                    await printWithDelay("Logging out...", 1000);
-                    terminal.innerHTML += `<p>> Session terminated.</p>`;
-                    break;
-                default:
-                    await printWithDelay("Unknown command. Type 'help' for a list of commands.", 500);
+        // ======================
+        // Game Engine
+        // ======================
+        function updateScore(points) {
+            score += points;
+            document.getElementById('score').textContent = score;
+            if (score > level * 1000) {
+                level++;
+                document.getElementById('level').textContent = level;
+                print(`[ACHIEVEMENT] Reached Level ${level}!`, 'achievement');
             }
         }
 
-        function caesarCipher(text, shift) {
-            return text.split("").map(char => {
-                if (char.match(/[a-z]/i)) {
-                    const code = char.charCodeAt(0);
-                    const offset = code >= 65 && code <= 90 ? 65 : 97;
-                    return String.fromCharCode(((code - offset + shift) % 26) + offset);
-                }
-                return char;
-            }).join("");
+        // ======================
+        // Quantum Encryption
+        // ======================
+        function quantumEncrypt(text) {
+            return CryptoJS.AES.encrypt(text, 'cyberhack-pro').toString();
+        }
+
+        function quantumDecrypt(ciphertext) {
+            return CryptoJS.AES.decrypt(ciphertext, 'cyberhack-pro').toString(CryptoJS.enc.Utf8);
+        }
+
+        // ======================
+        // Neural AI Processor
+        // ======================
+        async function aiPredict(command) {
+            const prediction = tf.tidy(() => {
+                const input = tf.tensor([command.split('').map(c => c.charCodeAt(0))]);
+                return aiModel.predict(input);
+            });
+            return prediction.dataSync()[0];
+        }
+
+        // ======================
+        // Core Functions
+        // ======================
+        function print(text, className = '') {
+            const p = document.createElement('p');
+            p.innerHTML = text;
+            if (className) p.className = className;
+            terminal.appendChild(p);
+            terminal.scrollTop = terminal.scrollHeight;
         }
 
         async function simulateHack(target) {
-            const progressBar = document.createElement("div");
-            progressBar.className = "progress-bar";
-            const progress = document.createElement("div");
-            progress.className = "progress";
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress-bar';
+            const progress = document.createElement('div');
+            progress.className = 'progress';
             progressBar.appendChild(progress);
             terminal.appendChild(progressBar);
 
-            for (let i = 0; i <= 100; i += 10) {
+            for (let i = 0; i <= 100; i += 2) {
                 progress.style.width = `${i}%`;
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(r => setTimeout(r, 50));
             }
 
-            await printWithDelay(`[✔] Successfully hacked ${target}`, 500);
             progressBar.remove();
+            print(`[SUCCESS] ${target} compromised!`);
+            updateScore(500);
         }
+
+        // ======================
+        // Command Processor
+        // ======================
+        async function processCommand(command) {
+            const [cmd, ...args] = command.split(' ');
+            
+            switch(cmd.toLowerCase()) {
+                case 'help':
+                    print('Available commands:');
+                    print('help, scan, brute, encrypt, decrypt, hack, ai, ddos, mine, upgrade, clear');
+                    break;
+                    
+                case 'scan':
+                    print('[AI] Scanning darknet...');
+                    await new Promise(r => setTimeout(r, 2000));
+                    print('[FOUND] Hidden Service: darkwebz3v3...onion');
+                    updateScore(200);
+                    break;
+                    
+                case 'hack':
+                    if (!args[0]) return print('Usage: hack [target]');
+                    await simulateHack(args[0]);
+                    break;
+                    
+                case 'encrypt':
+                    print(`Quantum Lock: ${quantumEncrypt(args.join(' '))}`);
+                    break;
+                    
+                case 'ai':
+                    print('[NEURAL NET] Processing...');
+                    const prediction = await aiPredict(args.join(' '));
+                    print(`AI Prediction: ${prediction > 0.5 ? 'Malicious' : 'Benign'}`);
+                    break;
+                    
+                case 'ddos':
+                    print('[WARNING] Launching DDoS...');
+                    await new Promise(r => setTimeout(r, 3000));
+                    print('[SUCCESS] Takedown complete!');
+                    updateScore(1000);
+                    break;
+                    
+                case 'upgrade':
+                    print('[SYSTEM] Installing quantum processors...');
+                    document.getElementById('ram').textContent = `${level * 64}MB`;
+                    break;
+                    
+                case 'clear':
+                    terminal.innerHTML = '';
+                    break;
+                    
+                default:
+                    print('[ERROR] Command not recognized');
+            }
+        }
+
+        // ======================
+        // Event Listeners
+        // ======================
+        input.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                const command = input.value.trim();
+                input.value = '';
+                print(`> ${command}`);
+                await processCommand(command);
+            }
+        });
     </script>
 </body>
 </html>
