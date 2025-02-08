@@ -3,281 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luke Yoon CS IA practice</title>
-    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+    <title>Luke Yoon's Casino Simulator</title>
     <style>
         :root {
-            --hacker-green: #00ff00;
-            --matrix-rain: #0f0;
+            --primary-color: #ffd700;
+            --secondary-color: #c00;
+            --bg-gradient: linear-gradient(45deg, #1a1a1a, #2d2d2d);
         }
+
         body {
-            background-color: #000;
-            color: var(--hacker-green);
-            font-family: 'Courier New', monospace;
             margin: 0;
-            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background: var(--bg-gradient);
+            color: white;
+            min-height: 100vh;
         }
-        .terminal-container {
-            position: relative;
-            padding: 20px;
-            height: 100vh;
+
+        .casino-header {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0,0,0,0.7);
+            border-bottom: 4px solid var(--primary-color);
         }
-        .matrix-rain {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: -1;
-            opacity: 0.3;
+
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
         }
-        .terminal {
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid var(--hacker-green);
-            height: 80vh;
-            padding: 20px;
-            overflow-y: auto;
-            box-shadow: 0 0 20px var(--hacker-green);
+
+        .game-panel {
+            background: rgba(0,0,0,0.8);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 20px rgba(255,215,0,0.3);
         }
-        .input-line {
+
+        .slot-machine {
             display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .slot-reel {
+            width: 80px;
+            height: 120px;
+            background: white;
+            border: 3px solid var(--secondary-color);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
             align-items: center;
-            margin-top: 10px;
+            font-size: 3rem;
+            overflow: hidden;
+            position: relative;
         }
-        input {
-            background: none;
+
+        .slot-symbol {
+            position: absolute;
+            animation: spin 0.1s infinite;
+        }
+
+        @keyframes spin {
+            from { transform: translateY(-120px); }
+            to { transform: translateY(120px); }
+        }
+
+        .balance-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 2px solid var(--primary-color);
+        }
+
+        .button {
+            background: var(--secondary-color);
+            color: white;
             border: none;
-            color: var(--hacker-green);
-            font-family: inherit;
-            flex-grow: 1;
-            margin-left: 5px;
-        }
-        .progress-bar {
-            height: 10px;
-            background: #333;
+            padding: 0.8rem 1.5rem;
             border-radius: 5px;
-            margin: 10px 0;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-        .progress {
-            height: 100%;
-            background: var(--hacker-green);
-            width: 0;
-            transition: width 0.3s;
+
+        .button:hover {
+            transform: scale(1.1);
         }
-        .hud {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
+
+        .blackjack-table {
+            display: grid;
+            gap: 1rem;
         }
-        .achievement {
-            animation: pop 0.5s;
-        }
-        @keyframes glitch {
-            0% { text-shadow: 2px 2px red; }
-            50% { text-shadow: -2px -2px cyan; }
-            100% { text-shadow: 2px -2px magenta; }
-        }
-        @keyframes matrix {
-            from { transform: translateY(-100%); }
-            to { transform: translateY(100%); }
-        }
-        @keyframes pop {
-            0% { transform: scale(0); }
-            90% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+
+        .card {
+            width: 60px;
+            height: 90px;
+            background: white;
+            border-radius: 8px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0.2rem;
+            font-weight: bold;
+            color: black;
         }
     </style>
 </head>
 <body>
-    <canvas class="matrix-rain" id="matrix"></canvas>
-    <div class="terminal-container">
-        <div class="hud">
-            <div>Score: <span id="score">0</span></div>
-            <div>Level: <span id="level">1</span></div>
-            <div>RAM: <span id="ram">64MB</span></div>
+    <div class="casino-header">
+        <h1>🎰 Luke Yoon's Casino Simulator 🃏</h1>
+        <p>Compete against AI in the ultimate coding challenge!</p>
+    </div>
+
+    <div class="balance-panel">
+        <h3>💰 Balance: $<span id="balance">1000</span></h3>
+        <input type="number" id="betAmount" value="100" min="10" max="1000">
+        <button class="button" onclick="updateBet()">Set Bet</button>
+    </div>
+
+    <div class="game-container">
+        <!-- Slot Machine Game -->
+        <div class="game-panel">
+            <h2>🔥 Lucky Slots 🔥</h2>
+            <div class="slot-machine">
+                <div class="slot-reel" id="reel1">🍒</div>
+                <div class="slot-reel" id="reel2">🍊</div>
+                <div class="slot-reel" id="reel3">🍇</div>
+            </div>
+            <button class="button" onclick="spinSlots()">SPIN ($<span id="currentBet">100</span>)</button>
         </div>
-        <div class="terminal" id="terminal">
-            <p>> Initializing Luke Yoon advanced hackingterminal Pro v5.0...</p>
-            <p>> Neural AI Core Activated</p>
-            <p>> Type 'help' for commands</p>
-        </div>
-        <div class="input-line">
-            <span>> </span>
-            <input type="text" id="commandInput" autofocus>
+
+        <!-- Blackjack Game -->
+        <div class="game-panel">
+            <h2>♠️ Blackjack Pro ♣️</h2>
+            <div class="blackjack-table">
+                <div id="dealer-cards"></div>
+                <div id="player-cards"></div>
+                <div>
+                    <button class="button" onclick="dealBlackjack()">DEAL</button>
+                    <button class="button" onclick="hit()">HIT</button>
+                    <button class="button" onclick="stand()">STAND</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // ======================
-        // Core System
-        // ======================
-        const terminal = document.getElementById('terminal');
-        const input = document.getElementById('commandInput');
-        let commandHistory = [];
-        let score = 0;
-        let level = 1;
-        let aiModel;
+        // Game State
+        let balance = 1000;
+        let currentBet = 100;
+        let isSpinning = false;
+        let blackjackGame = null;
 
-        // ======================
-        // AI Initialization
-        // ======================
-        async function initAI() {
-            aiModel = await tf.loadLayersModel('https://your-ai-model-url/model.json');
-        }
-        initAI();
-
-        // ======================
-        // Matrix Rain Effect
-        // ======================
-        const canvas = document.getElementById('matrix');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*';
-        const drops = Array(Math.floor(canvas.width / 10)).fill(0);
-
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#0F0';
-            drops.forEach((drop, i) => {
-                const char = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(char, i * 10, drop * 10);
-                drops[i] = (drop >= canvas.height/10 || Math.random() > 0.95) ? 0 : drop + 1;
-            });
-            requestAnimationFrame(drawMatrix);
-        }
-        drawMatrix();
-
-        // ======================
-        // Game Engine
-        // ======================
-        function updateScore(points) {
-            score += points;
-            document.getElementById('score').textContent = score;
-            if (score > level * 1000) {
-                level++;
-                document.getElementById('level').textContent = level;
-                print(`[ACHIEVEMENT] Reached Level ${level}!`, 'achievement');
-            }
-        }
-
-        // ======================
-        // Quantum Encryption
-        // ======================
-        function quantumEncrypt(text) {
-            return CryptoJS.AES.encrypt(text, 'cyberhack-pro').toString();
-        }
-
-        function quantumDecrypt(ciphertext) {
-            return CryptoJS.AES.decrypt(ciphertext, 'cyberhack-pro').toString(CryptoJS.enc.Utf8);
-        }
-
-        // ======================
-        // Neural AI Processor
-        // ======================
-        async function aiPredict(command) {
-            const prediction = tf.tidy(() => {
-                const input = tf.tensor([command.split('').map(c => c.charCodeAt(0))]);
-                return aiModel.predict(input);
-            });
-            return prediction.dataSync()[0];
-        }
-
-        // ======================
-        // Core Functions
-        // ======================
-        function print(text, className = '') {
-            const p = document.createElement('p');
-            p.innerHTML = text;
-            if (className) p.className = className;
-            terminal.appendChild(p);
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
-        async function simulateHack(target) {
-            const progressBar = document.createElement('div');
-            progressBar.className = 'progress-bar';
-            const progress = document.createElement('div');
-            progress.className = 'progress';
-            progressBar.appendChild(progress);
-            terminal.appendChild(progressBar);
-
-            for (let i = 0; i <= 100; i += 2) {
-                progress.style.width = `${i}%`;
-                await new Promise(r => setTimeout(r, 50));
-            }
-
-            progressBar.remove();
-            print(`[SUCCESS] ${target} compromised!`);
-            updateScore(500);
-        }
-
-        // ======================
-        // Command Processor
-        // ======================
-        async function processCommand(command) {
-            const [cmd, ...args] = command.split(' ');
+        // Slot Machine Logic
+        const symbols = ['🍒', '🍊', '🍇', '💎', '7️⃣', '🔔'];
+        
+        function spinSlots() {
+            if (isSpinning || balance < currentBet) return;
             
-            switch(cmd.toLowerCase()) {
-                case 'help':
-                    print('Available commands:');
-                    print('help, scan, brute, encrypt, decrypt, hack, ai, ddos, mine, upgrade, clear');
-                    break;
-                    
-                case 'scan':
-                    print('[AI] Scanning darknet...');
-                    await new Promise(r => setTimeout(r, 2000));
-                    print('[FOUND] Hidden Service: darkwebz3v3...onion');
-                    updateScore(200);
-                    break;
-                    
-                case 'hack':
-                    if (!args[0]) return print('Usage: hack [target]');
-                    await simulateHack(args[0]);
-                    break;
-                    
-                case 'encrypt':
-                    print(`Quantum Lock: ${quantumEncrypt(args.join(' '))}`);
-                    break;
-                    
-                case 'ai':
-                    print('[NEURAL NET] Processing...');
-                    const prediction = await aiPredict(args.join(' '));
-                    print(`AI Prediction: ${prediction > 0.5 ? 'Malicious' : 'Benign'}`);
-                    break;
-                    
-                case 'ddos':
-                    print('[WARNING] Launching DDoS...');
-                    await new Promise(r => setTimeout(r, 3000));
-                    print('[SUCCESS] Takedown complete!');
-                    updateScore(1000);
-                    break;
-                    
-                case 'upgrade':
-                    print('[SYSTEM] Installing quantum processors...');
-                    document.getElementById('ram').textContent = `${level * 64}MB`;
-                    break;
-                    
-                case 'clear':
-                    terminal.innerHTML = '';
-                    break;
-                    
-                default:
-                    print('[ERROR] Command not recognized');
+            balance -= currentBet;
+            updateBalance();
+            isSpinning = true;
+            
+            const reels = document.querySelectorAll('.slot-reel');
+            let results = [];
+            
+            reels.forEach((reel, index) => {
+                let spins = 0;
+                const spinInterval = setInterval(() => {
+                    reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                    if (spins++ > 30 + (index * 10)) {
+                        clearInterval(spinInterval);
+                        results.push(reel.textContent);
+                        if (index === reels.length - 1) checkWin(results);
+                    }
+                }, 50);
+            });
+        }
+
+        function checkWin(results) {
+            isSpinning = false;
+            if (new Set(results).size === 1) {
+                const winAmount = currentBet * (symbols.indexOf(results[0]) + 2);
+                balance += winAmount;
+                alert(`🎉 JACKPOT! You won $${winAmount}!`);
+                updateBalance();
             }
         }
 
-        // ======================
-        // Event Listeners
-        // ======================
-        input.addEventListener('keypress', async (e) => {
-            if (e.key === 'Enter') {
-                const command = input.value.trim();
-                input.value = '';
-                print(`> ${command}`);
-                await processCommand(command);
+        // Blackjack Logic
+        class Blackjack {
+            constructor() {
+                this.deck = this.createDeck();
+                this.dealerHand = [];
+                this.playerHand = [];
             }
-        });
+
+            createDeck() {
+                const suits = ['♠', '♣', '♥', '♦'];
+                const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+                return suits.flatMap(suit => values.map(value => ({ suit, value })));
+            }
+
+            dealCard(hand) {
+                const cardIndex = Math.floor(Math.random() * this.deck.length);
+                hand.push(this.deck.splice(cardIndex, 1)[0]);
+            }
+
+            calculateTotal(hand) {
+                let total = 0;
+                let aces = 0;
+                
+                hand.forEach(card => {
+                    if (card.value === 'A') aces++;
+                    total += Math.min(10, parseInt(card.value) || 10);
+                });
+                
+                while (total <= 11 && aces > 0) {
+                    total += 10;
+                    aces--;
+                }
+                return total;
+            }
+        }
+
+        function dealBlackjack() {
+            if (balance < currentBet) return;
+            balance -= currentBet;
+            updateBalance();
+            
+            blackjackGame = new Blackjack();
+            blackjackGame.dealCard(blackjackGame.dealerHand);
+            blackjackGame.dealCard(blackjackGame.playerHand);
+            blackjackGame.dealCard(blackjackGame.playerHand);
+            
+            updateBlackjackUI();
+        }
+
+        function updateBlackjackUI() {
+            // Implement card display logic
+        }
+
+        // Utility Functions
+        function updateBalance() {
+            document.getElementById('balance').textContent = balance;
+        }
+
+        function updateBet() {
+            currentBet = Math.min(1000, Math.max(10, parseInt(document.getElementById('betAmount').value)));
+            document.getElementById('currentBet').textContent = currentBet;
+        }
+
+        // Initialize game
+        updateBalance();
     </script>
 </body>
 </html>
