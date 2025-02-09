@@ -15,15 +15,15 @@
         <header class="header">
             <a href="#" class="logo">Luke's Quiz</a>
             <nav class="navbar">
-                <a href="#" class="active">Home</a>
-                <a href="#">About</a>
-                <a href="#">Contact</a>
+                <a href="#" class="active" id="home-link">Home</a>
+                <a href="#" id="about-link">About</a>
+                <a href="#" id="contact-link">Contact</a>
             </nav>
         </header>
 
         <!-- Main content for the quiz game -->
         <div class="container">
-            <section class="quiz-section">
+            <section class="quiz-section" id="quiz-section">
                 <!-- Quiz box containing question and options -->
                 <div class="quiz-box">
                     <h1>Luke's IB CS Quiz</h1>
@@ -61,13 +61,29 @@
             </section>
 
             <!-- Home section displayed before quiz starts -->
-            <section class="home">
+            <section class="home" id="home-section">
                 <div class="home-content">
                     <h1>Welcome to Luke's Quiz Game</h1>
                     <p>Ready to test your knowledge? Press the button below to start the quiz.</p>
                     <button class="start-btn">Start Quiz</button>
                 </div>
             </section>
+
+            <!-- About section -->
+            <section class="about" id="about-section" style="display: none;">
+                <h1>About Luke's Quiz Game</h1>
+                <p>This quiz was created with the goal of testing the knowledge of IB Computer Science students. The questions cover a range of topics that are relevant to the IB curriculum, aiming to help students prepare for exams by offering an interactive and challenging quiz format.</p>
+                <p>The reason for creating this quiz is to provide a resource for students who are looking to test their understanding of key concepts in Computer Science and help them assess their readiness for the IB exam.</p>
+            </section>
+
+            <!-- Contact section -->
+            <section class="contact" id="contact-section" style="display: none;">
+                <h1>Contact Us</h1>
+                <p>If you have any questions or feedback, feel free to reach out!</p>
+                <p>Instagram: <a href="https://www.instagram.com/tq_yoon/" target="_blank">tq_yoon</a></p>
+                <p>Email: <a href="mailto:lukeyoon0514@gmail.com">lukeyoon0514@gmail.com</a></p>
+            </section>
+
         </div>
     </main>
 
@@ -100,5 +116,45 @@
         </div>
     </footer>
 
+    <script>
+        // JavaScript to manage navigation between sections
+        const homeLink = document.getElementById('home-link');
+        const aboutLink = document.getElementById('about-link');
+        const contactLink = document.getElementById('contact-link');
+
+        const homeSection = document.getElementById('home-section');
+        const quizSection = document.getElementById('quiz-section');
+        const aboutSection = document.getElementById('about-section');
+        const contactSection = document.getElementById('contact-section');
+
+        homeLink.addEventListener('click', () => {
+            homeSection.style.display = 'block';
+            quizSection.style.display = 'none';
+            aboutSection.style.display = 'none';
+            contactSection.style.display = 'none';
+        });
+
+        aboutLink.addEventListener('click', () => {
+            homeSection.style.display = 'none';
+            quizSection.style.display = 'none';
+            aboutSection.style.display = 'block';
+            contactSection.style.display = 'none';
+        });
+
+        contactLink.addEventListener('click', () => {
+            homeSection.style.display = 'none';
+            quizSection.style.display = 'none';
+            aboutSection.style.display = 'none';
+            contactSection.style.display = 'block';
+        });
+
+        // Set home section to show by default
+        homeSection.style.display = 'block';
+        quizSection.style.display = 'none';
+        aboutSection.style.display = 'none';
+        contactSection.style.display = 'none';
+    </script>
+
 </body>
 </html>
+
