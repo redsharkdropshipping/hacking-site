@@ -260,14 +260,15 @@
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyBDcwF_pQJWXc1FEpeJgYT8M2xrgTB9_1M",
-            authDomain: "casino-simulator.firebaseapp.com",
-            databaseURL: "G-MZR8CD854N",
-            projectId: "casino-simulator",
-            storageBucket: "casino-simulator.firebasestorage.app",
-            messagingSenderId: "34033447387",
-            appId: "1:340334473875:web:f08f8f88d4d480831fd366"
-        };
+    apiKey: "AIzaSyBDcwF_pQJWXc1FEpeJgYT8M2xrgTB9_1M",
+    authDomain: "casino-simulator.firebaseapp.com",
+    databaseURL: "https://casino-simulator.firebaseio.com",  // Correct format for database URL
+    projectId: "casino-simulator",
+    storageBucket: "casino-simulator.appspot.com",  // Correct storage bucket format
+    messagingSenderId: "34033447387",
+    appId: "1:340334473875:web:f08f8f88d4d480831fd366"
+};
+
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
