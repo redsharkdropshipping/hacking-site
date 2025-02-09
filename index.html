@@ -11,21 +11,61 @@
     <style>
         body {
             font-family: 'Roboto Condensed', sans-serif;
-            background-color: #1c1c1c;
-            color: white;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2 {
+            font-family: 'Playfair Display', serif;
             text-align: center;
         }
+
+        .user-panel, .admin-panel {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
         .slot-machine {
-            margin-top: 20px;
+            text-align: center;
+            margin-top: 50px;
         }
+
         .slot-reel {
-            display: inline-block;
             font-size: 50px;
-            margin: 10px;
+            display: inline-block;
+            padding: 10px;
         }
-        .user-panel {
-            margin-top: 20px;
+
+        .slot-reel-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
         }
+
+        .slot-reel-container .slot-reel {
+            margin: 0 10px;
+        }
+
         .admin-panel {
             display: none;
             position: fixed;
@@ -39,12 +79,18 @@
 </head>
 <body>
     <h1>Luxe Casino</h1>
-    <div class="user-panel"></div>
+    <div class="user-panel">
+        <!-- User Panel will dynamically update -->
+    </div>
+
     <div class="slot-machine">
-        <div class="slot-reel">🍒</div>
-        <div class="slot-reel">🍊</div>
-        <div class="slot-reel">🍋</div>
-        <button onclick="spinSlots()">Spin</button>
+        <h2>Slot Machine</h2>
+        <div class="slot-reel-container">
+            <div class="slot-reel">🍒</div>
+            <div class="slot-reel">🍊</div>
+            <div class="slot-reel">🍋</div>
+        </div>
+        <button class="btn" onclick="spinSlots()">Spin!</button>
     </div>
 
     <div class="admin-panel" id="adminPanel">
@@ -53,23 +99,27 @@
     </div>
 
     <script>
+        // Firebase Configuration (Replace with your actual config)
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID",
-            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com"
+            apiKey: "AIzaSyBDcwF_pQJWXc1FEpeJgYT8M2xrgTB9_1M",
+            authDomain: "casino-simulator.firebaseapp.com",
+            projectId: "casino-simulator",
+            storageBucket: "casino-simulator.firebasestorage.app",
+            messagingSenderId: "34033447387",
+            appId: "1:340334473875:web:f08f8f88d4d480831fd366",
+            databaseURL: "G-MZR8CD854N"
         };
 
+        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        
+
         let currentUser = null;
+        let isLoginMode = true;
         const ADMIN_EMAIL = "admin@luxe.casino";
-        
+
+        // Auth State Listener
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             if (user) {
@@ -83,24 +133,37 @@
             }
         });
 
+        // Slot Machine Logic
+        const symbols = ['🍒', '🍊', '🍋', '💎', '7️⃣', '🔔'];
+        const payouts = {
+            '🍒🍒🍒': 50,
+            '💎💎💎': 200,
+            '7️⃣7️⃣7️⃣': 500,
+            // Add more payout combinations here
+        };
+
         async function spinSlots() {
             const betAmount = 10;
             const balance = await getBalance();
+            
             if (balance < betAmount) {
                 alert('Insufficient funds!');
                 return;
             }
 
             updateBalance(-betAmount);
+            
+            const reels = Array.from({length: 3}, () => 
+                symbols[Math.floor(Math.random() * symbols.length)]
+            );
 
-            const symbols = ['🍒', '🍊', '🍋', '💎', '7️⃣', '🔔'];
-            const reels = Array.from({ length: 3 }, () => symbols[Math.floor(Math.random() * symbols.length)]);
-
+            // Animate reels
             animateReels(reels).then(() => {
                 const combination = reels.join('');
-                if (combination === '🍒🍒🍒') {
-                    updateBalance(50);
-                    alert('You won 50!');
+                const winAmount = payouts[combination] || 0;
+                if (winAmount > 0) {
+                    updateBalance(winAmount);
+                    alert(`Winner! 🎉 You won $${winAmount}!`);
                 }
             });
         }
@@ -112,7 +175,7 @@
                     reel.style.transition = 'transform 2s ease-out';
                     reel.style.transform = `translateY(-${100 * (i + 5)}px)`;
                 });
-
+                
                 setTimeout(() => {
                     reelElements.forEach((reel, i) => {
                         reel.textContent = reels[i];
@@ -123,6 +186,40 @@
             });
         }
 
+        // Auth Functions
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const errorDiv = document.getElementById('authError');
+
+            try {
+                if (isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await initializeUserData(userCredential.user);
+                }
+                closeAuthModal();
+            } catch (error) {
+                errorDiv.textContent = error.message;
+            }
+        }
+
+        async function initializeUserData(user) {
+            const userRef = db.ref(`users/${user.uid}`);
+            const snapshot = await userRef.once('value');
+            
+            if (!snapshot.exists()) {
+                await userRef.set({
+                    balance: 1000,
+                    isAdmin: user.email === ADMIN_EMAIL,
+                    createdAt: Date.now()
+                });
+            }
+        }
+
+        // Balance Management
         async function getBalance() {
             if (!currentUser) return 0;
             const snapshot = await db.ref(`users/${currentUser.uid}/balance`).once('value');
@@ -138,43 +235,122 @@
             });
         }
 
+        // UI Updates
         function updateUI() {
             const userPanel = document.querySelector('.user-panel');
             if (currentUser) {
-                userPanel.innerHTML = `
+                userPanel.innerHTML = ` 
                     <span class="balance">💰 $<span id="balanceValue">Loading...</span></span>
                     <span>${currentUser.email}</span>
-                    <button onclick="auth.signOut()">Logout</button>
+                    <button class="btn btn-primary" onclick="auth.signOut()">Logout</button>
                 `;
                 db.ref(`users/${currentUser.uid}/balance`).on('value', (snapshot) => {
                     document.getElementById('balanceValue').textContent = snapshot.val();
                 });
             } else {
                 userPanel.innerHTML = `
-                    <button onclick="showAuthModal('login')">Login</button>
+                    <button class="btn btn-primary" onclick="showAuthModal('login')">Login</button>
                 `;
             }
         }
 
-        async function initializeUserData(user) {
-            const userRef = db.ref(`users/${user.uid}`);
-            const snapshot = await userRef.once('value');
-            if (!snapshot.exists()) {
-                await userRef.set({
-                    balance: 1000,
-                    isAdmin: user.email === ADMIN_EMAIL,
-                    createdAt: Date.now()
-                });
+        // Admin Functions
+        async function showAllUsers() {
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            
+            const usersRef = db.ref('users');
+            const snapshot = await usersRef.once('value');
+            const users = snapshot.val();
+            
+            alert(JSON.stringify(users, null, 2));
+        }
+
+    </script>
+</body>
+</html>
+    <!-- Modal for Authentication -->
+    <div id="authModal" style="display: none;">
+        <div class="auth-modal-content">
+            <h2 id="authTitle">Login</h2>
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <input type="email" id="authEmail" placeholder="Email" required>
+                <input type="password" id="authPassword" placeholder="Password" required>
+                <button type="submit" class="btn">Submit</button>
+                <p id="authError" style="color: red;"></p>
+            </form>
+            <button class="btn" onclick="toggleAuthMode()">Switch to <span id="authMode">Register</span></button>
+            <button class="btn" onclick="closeAuthModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Authentication Modal and Switch
+        function showAuthModal(mode) {
+            document.getElementById('authModal').style.display = 'block';
+            if (mode === 'login') {
+                isLoginMode = true;
+                document.getElementById('authTitle').textContent = 'Login';
+                document.getElementById('authMode').textContent = 'Register';
+            } else {
+                isLoginMode = false;
+                document.getElementById('authTitle').textContent = 'Register';
+                document.getElementById('authMode').textContent = 'Login';
             }
         }
 
-        function showAllUsers() {
-            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
-            const usersRef = db.ref('users');
-            usersRef.once('value').then((snapshot) => {
-                alert(JSON.stringify(snapshot.val(), null, 2));
-            });
+        function toggleAuthMode() {
+            if (isLoginMode) {
+                showAuthModal('register');
+            } else {
+                showAuthModal('login');
+            }
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
         }
     </script>
-</body>
+
+    <style>
+        #authModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .auth-modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .auth-modal-content button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .auth-modal-content button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </html>
