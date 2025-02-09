@@ -9,7 +9,23 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* ... (keep existing styles) ... */
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background-color: #1c1c1c;
+            color: white;
+            text-align: center;
+        }
+        .slot-machine {
+            margin-top: 20px;
+        }
+        .slot-reel {
+            display: inline-block;
+            font-size: 50px;
+            margin: 10px;
+        }
+        .user-panel {
+            margin-top: 20px;
+        }
         .admin-panel {
             display: none;
             position: fixed;
@@ -22,34 +38,38 @@
     </style>
 </head>
 <body>
-    <!-- ... (keep existing HTML structure) ... -->
+    <h1>Luxe Casino</h1>
+    <div class="user-panel"></div>
+    <div class="slot-machine">
+        <div class="slot-reel">🍒</div>
+        <div class="slot-reel">🍊</div>
+        <div class="slot-reel">🍋</div>
+        <button onclick="spinSlots()">Spin</button>
+    </div>
+
     <div class="admin-panel" id="adminPanel">
         <h3>Admin Controls</h3>
         <button class="btn btn-danger" onclick="showAllUsers()">View Users</button>
     </div>
 
     <script>
-        // Firebase Configuration (Replace with your actual config)
         const firebaseConfig = {
-            apiKey: "AIzaSyBDcwF_pQJWXc1FEpeJgYT8M2xrgTB9_1M",
-            authDomain: "casino-simulator.firebaseapp.com",
-            projectId: "casino-simulator",
-            storageBucket: "casino-simulator.firebasestorage.app",
-            messagingSenderId: "34033447387",
-            appId: "1:340334473875:web:f08f8f88d4d480831fd366",
-            databaseURL: "G-MZR8CD854N"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com"
         };
 
-        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-
+        
         let currentUser = null;
-        let isLoginMode = true;
         const ADMIN_EMAIL = "admin@luxe.casino";
-
-        // Auth State Listener
+        
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             if (user) {
@@ -63,37 +83,24 @@
             }
         });
 
-        // Slot Machine Logic
-        const symbols = ['🍒', '🍊', '🍋', '💎', '7️⃣', '🔔'];
-        const payouts = {
-            '🍒🍒🍒': 50,
-            '💎💎💎': 200,
-            '7️⃣7️⃣7️⃣': 500,
-            // Add more payout combinations
-        };
-
         async function spinSlots() {
             const betAmount = 10;
             const balance = await getBalance();
-            
             if (balance < betAmount) {
                 alert('Insufficient funds!');
                 return;
             }
 
             updateBalance(-betAmount);
-            
-            const reels = Array.from({length: 3}, () => 
-                symbols[Math.floor(Math.random() * symbols.length)]
-            );
 
-            // Animate reels
+            const symbols = ['🍒', '🍊', '🍋', '💎', '7️⃣', '🔔'];
+            const reels = Array.from({ length: 3 }, () => symbols[Math.floor(Math.random() * symbols.length)]);
+
             animateReels(reels).then(() => {
                 const combination = reels.join('');
-                const winAmount = payouts[combination] || 0;
-                if (winAmount > 0) {
-                    updateBalance(winAmount);
-                    alert(`Winner! 🎉 You won $${winAmount}!`);
+                if (combination === '🍒🍒🍒') {
+                    updateBalance(50);
+                    alert('You won 50!');
                 }
             });
         }
@@ -105,7 +112,7 @@
                     reel.style.transition = 'transform 2s ease-out';
                     reel.style.transform = `translateY(-${100 * (i + 5)}px)`;
                 });
-                
+
                 setTimeout(() => {
                     reelElements.forEach((reel, i) => {
                         reel.textContent = reels[i];
@@ -116,40 +123,6 @@
             });
         }
 
-        // Auth Functions
-        async function handleAuth(e) {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            const errorDiv = document.getElementById('authError');
-
-            try {
-                if (isLoginMode) {
-                    await auth.signInWithEmailAndPassword(email, password);
-                } else {
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    await initializeUserData(userCredential.user);
-                }
-                closeAuthModal();
-            } catch (error) {
-                errorDiv.textContent = error.message;
-            }
-        }
-
-        async function initializeUserData(user) {
-            const userRef = db.ref(`users/${user.uid}`);
-            const snapshot = await userRef.once('value');
-            
-            if (!snapshot.exists()) {
-                await userRef.set({
-                    balance: 1000,
-                    isAdmin: user.email === ADMIN_EMAIL,
-                    createdAt: Date.now()
-                });
-            }
-        }
-
-        // Balance Management
         async function getBalance() {
             if (!currentUser) return 0;
             const snapshot = await db.ref(`users/${currentUser.uid}/balance`).once('value');
@@ -165,37 +138,43 @@
             });
         }
 
-        // UI Updates
         function updateUI() {
             const userPanel = document.querySelector('.user-panel');
             if (currentUser) {
                 userPanel.innerHTML = `
                     <span class="balance">💰 $<span id="balanceValue">Loading...</span></span>
                     <span>${currentUser.email}</span>
-                    <button class="btn btn-primary" onclick="auth.signOut()">Logout</button>
+                    <button onclick="auth.signOut()">Logout</button>
                 `;
                 db.ref(`users/${currentUser.uid}/balance`).on('value', (snapshot) => {
                     document.getElementById('balanceValue').textContent = snapshot.val();
                 });
             } else {
                 userPanel.innerHTML = `
-                    <button class="btn btn-primary" onclick="showAuthModal('login')">Login</button>
+                    <button onclick="showAuthModal('login')">Login</button>
                 `;
             }
         }
 
-        // Admin Functions
-        async function showAllUsers() {
-            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
-            
-            const usersRef = db.ref('users');
-            const snapshot = await usersRef.once('value');
-            const users = snapshot.val();
-            
-            alert(JSON.stringify(users, null, 2));
+        async function initializeUserData(user) {
+            const userRef = db.ref(`users/${user.uid}`);
+            const snapshot = await userRef.once('value');
+            if (!snapshot.exists()) {
+                await userRef.set({
+                    balance: 1000,
+                    isAdmin: user.email === ADMIN_EMAIL,
+                    createdAt: Date.now()
+                });
+            }
         }
 
-        // ... (keep existing modal functions) ...
+        function showAllUsers() {
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            const usersRef = db.ref('users');
+            usersRef.once('value').then((snapshot) => {
+                alert(JSON.stringify(snapshot.val(), null, 2));
+            });
+        }
     </script>
 </body>
 </html>
