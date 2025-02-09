@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxe Casino | Luke Yoon</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FFD700;
+            --secondary: #C0C0C0;
+            --dark: #0A0A0A;
+            --light: #F5F5F5;
+            --success: #28A745;
+            --danger: #DC3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            padding: 2rem 1rem;
+            border-bottom: 3px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--primary);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .user-panel {
+            position: absolute;
+            top: 1rem;
+            right: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .game-card h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark);
+        }
+
+        .btn-primary:hover {
+            background: #FFC400;
+        }
+
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+        .auth-content {
+            position: relative;
+            background: var(--dark);
+            max-width: 400px;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: var(--light);
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--secondary);
+            color: var(--light);
+            border-radius: 5px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .slot-machine {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+
+        .slot-reel {
+            background: #fff;
+            height: 100px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--dark);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slot-symbol {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .balance {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin: 1rem 0;
+        }
+
+        @keyframes spin {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-1000px); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🎩 LUXE CASINO 🎲</h1>
+        <div class="user-panel">
+            <span id="userBalance" class="balance">💰 $1000</span>
+            <button class="btn btn-primary" onclick="showAuthModal('login')">Login</button>
+        </div>
+    </header>
+
+    <main class="games-grid">
+        <!-- Slot Machine -->
+        <div class="game-card">
+            <h2>🎰 Diamond Slots</h2>
+            <div class="slot-machine">
+                <div class="slot-reel" id="reel1">🍒</div>
+                <div class="slot-reel" id="reel2">🍊</div>
+                <div class="slot-reel" id="reel3">🍋</div>
+            </div>
+            <button class="btn btn-primary" onclick="spinSlots()">Spin ($10)</button>
+        </div>
+
+        <!-- Blackjack -->
+        <div class="game-card">
+            <h2>🃏 VIP Blackjack</h2>
+            <div id="blackjack-table">
+                <div class="dealer-hand"></div>
+                <div class="player-hand"></div>
+                <div class="blackjack-controls">
+                    <button class="btn btn-primary">Hit</button>
+                    <button class="btn btn-primary">Stand</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Roulette -->
+        <div class="game-card">
+            <h2>🔴 European Roulette</h2>
+            <div id="roulette-wheel"></div>
+            <button class="btn btn-primary">Place Bets</button>
+        </div>
+    </main>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="auth-modal">
+        <div class="auth-content">
+            <span class="close-btn" onclick="closeAuthModal()">&times;</span>
+            <h2 id="authTitle">Welcome to Luxe Casino</h2>
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <div class="form-group">
+                    <input type="email" id="authEmail" class="form-control" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="authPassword" class="form-control" placeholder="Password" required>
+                </div>
+                <div id="authError" class="error-message"></div>
+                <button type="submit" class="btn btn-primary" id="authSubmit">Continue</button>
+            </form>
+            <div class="auth-switch">
+                <p id="authSwitchText">New here? <a href="#" onclick="toggleAuthMode()">Create Account</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let isLoginMode = true;
+
+        // Slot Machine Logic
+        const symbols = ['🍒', '🍊', '🍋', '💎', '7️⃣', '🔔'];
+        function getRandomSymbol() {
+            return symbols[Math.floor(Math.random() * symbols.length)];
+        }
+
+        function spinSlots() {
+            const reels = document.querySelectorAll('.slot-reel');
+            reels.forEach((reel, index) => {
+                reel.style.animation = 'spin 3s cubic-bezier(0.25, 1, 0.5, 1)';
+                setTimeout(() => {
+                    reel.textContent = getRandomSymbol();
+                    reel.style.animation = '';
+                }, 3000 - (index * 500));
+            });
+        }
+
+        // Auth Modal Functions
+        function showAuthModal(mode) {
+            const modal = document.getElementById('authModal');
+            modal.style.display = 'block';
+            isLoginMode = mode === 'login';
+            updateAuthUI();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            const title = document.getElementById('authTitle');
+            const submitBtn = document.getElementById('authSubmit');
+            const switchText = document.getElementById('authSwitchText');
+            
+            if(isLoginMode) {
+                title.textContent = "Welcome Back!";
+                submitBtn.textContent = "Login";
+                switchText.innerHTML = 'New here? <a href="#" onclick="toggleAuthMode()">Create Account</a>';
+            } else {
+                title.textContent = "Join Luxe Casino";
+                submitBtn.textContent = "Sign Up";
+                switchText.innerHTML = 'Already a member? <a href="#" onclick="toggleAuthMode()">Login</a>';
+            }
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const errorDiv = document.getElementById('authError');
+
+            try {
+                if(isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    // Create user profile in Realtime DB
+                    await db.ref('users/' + auth.currentUser.uid).set({
+                        email: email,
+                        balance: 1000,
+                        joined: Date.now()
+                    });
+                }
+                closeAuthModal();
+                updateUserUI();
+            } catch(error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.color = 'var(--danger)';
+            }
+        }
+
+        function updateUserUI() {
+            const user = auth.currentUser;
+            if(user) {
+                // Fetch user balance from DB
+                db.ref('users/' + user.uid).once('value').then(snapshot => {
+                    const userData = snapshot.val();
+                    document.getElementById('userBalance').textContent = `💰 $${userData.balance}`;
+                });
+            }
+        }
+
+        // Auth State Listener
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                updateUserUI();
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('authModal');
+            if(event.target == modal) {
+                closeAuthModal();
+            }
+        }
+    </script>
+</body>
+</html>
