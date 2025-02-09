@@ -3,96 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Game Website</title>
-    <!--Link CSS files-->
-    <link rel="stylesheet" href="style.css">
+    <title>IB DP Computer Science Quiz - Made by Luke Yoon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .question-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .options {
+            list-style: none;
+            padding: 0;
+        }
+        .options li {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .options li:hover {
+            background-color: #ccc;
+        }
+        .btn-container {
+            margin-top: 20px;
+        }
+        .btn-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-container button:hover {
+            background-color: #45a049;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
 
-    <main class="main">
-
-        <!-- Header section containing navbar and logo -->
-        <header class="header">
-            <a href="#" class="logo">Luke's Quiz</a>
-
-            <nav class="navbar">
-                <a href="#" class="active">Home</a>
-                <a href="#">About</a>
-                <a href="#">Contact</a>
-            </nav>
-        </header>
-
-        <!-- Another section for home content -->
-        <div class="container">
-            <section class="quiz-section">
-                <div class="quiz-box">
-                    <h1>Nabin's Quiz</h1>
-                    <div class="quiz-header">
-                        <span>Welcome to Quiz Game</span>
-                        <span class="header-score">Score: 0 / 5</span>
-                    </div>
-
-                    <h2 class="question-text"></h2>
-
-                    <div class="option-list">
-                    </div> 
-
-                    <div class="quiz-footer">
-                        <span class="question-total"></span>
-                        <button class="next-btn">Next</button>
-                    </div>
-                </div>
-
-                <div class="result-box">
-                    <h2>Quiz Result!</h2>
-                    <div class="percentage-container">
-                        <div class="circular-progress">
-                            <span class="progress-value">0%</span>
-                        </div>
-                        <span class="score-text">Your Score 0 out of 5</span>
-                    </div>
-                    <div class="buttons">
-                        <button class="tryAgain-btn">Try Again</button>
-                        <button class="goHome-btn">Go To Home</button>
-                    </div>
-                </div>
-            </section>
-            <section class="home">
-                <div class="home-content">
-                    <h1>Quiz Game</h1>
-                    <p>Welcome to the Nabin's Quiz game. After starting quiz you will get a quiz guide.</p>
-                    <button class="start-btn">Start Quiz</button>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <!-- Division for Quiz guide popup-->
-    <div class="popup-info">
-        <h2>Quiz Guide</h2>
-        <span class="info">1. You cannot skip any questions.</span>
-        <span class="info">2. Once attempt any question, you cannot go to previous question.</span>
-        <span class="info">3. After one answer is selected, other option will be disabled.</span>
-        <span class="info">4. You will be given total 5 questions.</span>
-        <span class="info">5. Concentrate on your Quiz, Don't try to cheat.</span>
-
-        <!--Buttons for starting quiz  -->
-        <div class="btn-group">
-            <button class="info-btn exit-btn">Exit Quiz</button>
-            <a href="#" class="info-btn continue-btn">Continue</a>
-        </div>
+    <div class="question-container">
+        <h2 id="question-text"></h2>
+        <ul id="options-list" class="options"></ul>
     </div>
 
-    <!--Link Javascript files-->
-    <script src="script.js"></script>
-    <script src="questions.js"></script>
+    <div class="btn-container">
+        <button onclick="nextQuestion()">Next</button>
+    </div>
 
-    <footer class="footer">
-        <div class="footer-content">
-            <p>&copy; 2023 Luke's Quiz</p>
-        </div>
-    </footer>
+    <div class="footer">
+        <p>&copy; 2025 Luke Yoon. All rights reserved.</p>
+        <p>Contact: <a href="mailto:lukeyoon0514@gmail.com">lukeyoon0514@gmail.com</a> | Instagram: <a href="https://www.instagram.com/tq_yoon/">@tq_yoon</a></p>
+    </div>
+
+    <script src="questions.js"></script>
+    <script>
+        let currentQuestionIndex = 0;
+        let selectedQuestions = [];
+
+        // Shuffle questions and pick 10 random ones
+        function shuffleQuestions() {
+            // Shuffle the full list of questions
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            // Select the first 10 questions from the shuffled array
+            selectedQuestions = questions.slice(0, 10);
+        }
+
+        function showQuestion() {
+            let currentQuestion = selectedQuestions[currentQuestionIndex];
+            document.getElementById('question-text').textContent = currentQuestion.question;
+
+            let optionsList = document.getElementById('options-list');
+            optionsList.innerHTML = ""; // Clear previous options
+            currentQuestion.options.forEach(option => {
+                let li = document.createElement('li');
+                li.textContent = option;
+                optionsList.appendChild(li);
+            });
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < selectedQuestions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                alert("You have completed all the questions!");
+            }
+        }
+
+        // Initialize quiz
+        shuffleQuestions();
+        showQuestion();
+    </script>
 
 </body>
 </html>
-
